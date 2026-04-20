@@ -1,0 +1,764 @@
+Configuration Management:
+===============================
+
+Configuration : 
+Making changes on the available infrastructure:
+
+installing/uninstalling/updating packages
+Creation/copying/deleting files and directories
+Deploying your applications
+Running scripts
+Giving permissions
+users/groups creation
+
+ Management:
+
+Making these changes on available infrastructure manually or using a tool.
+
+If done manually:
+Lot of time
+Error prone
+Miss out configuring certain servers
+Multiple environments - tedious job
+Repetitive task
+Can be done with shell scripts
+Manage and write the scripts
+Obsolete way of automating
+
+
+Configuration management with tools
+
+DevOps principles encourages us to use CM tools to automate the process of configuration
+
+There are various CM tools:
+Ansible
+Saltstack
+Puppet
+Chef 
+
+Because of using the tool : 
+Configurations can be applied frequently
+Repetitive task will be automated
+Less errors
+Easy to learn
+Version control the code and share it with team member
+Easily apply configuration to multiple servers in no time
+Deploy applications on various environments
+
+
+
+
+
+Configuration management:
+===============================
+> Use an automation tool to make changes on several servers in different environment in less time 
+> In the automation tool, we will write CM code that when executed will apply changes on various servers
+> CM tools can be used to ensure consistency across various environments
+> CM tool will ensure desired changes are always available on the given environment 
+> This code can be maintained in the VC tool and other team members can also collaborate to it 
+
+Provisioning Infrastructure:
+============================
+Writing the code to create/delete/modify the infrastructure on a cloud providers 
+We will sue a tool to write the code --> Terraform -> IAC tool
+
+CM tools :
+==================
+PULL Approach:
+==================
+Puppet:
+
+Puppet DSLs to write the code
+this code is converted to a catalog which is a key value pair
+
+Chef:
+DSLs to write the code
+
+In pull approach changes are pulled by the worker nodes 
+The controller or the master node will not make any changes on the worker nodejs
+Setting up of tools is time consuming
+agents will pull the changes based on the scheduled time 
+Changes are not available immediately
+if you have a smaller infra and do not require continuous updates to infra then you may opt for this
+
+PUSH Approach:
+====================
+Ansible
+Saltstack
+
+No isntallation of agent process on worker nodes
+The code is written on the Controller node 
+The controller will connect to the worker node and exeucte the code there 
+As an admin you can see the desired changes have been made or not from the controller itself
+The changes are done immediately on worker nodes 
+
+Ansible:
+==============================
+-> It is an open source CM tool 
+-> It very easy tool and easy to learn 
+-> It works on push approach 
+-> Ansible has 2 parts :
+    - ansible core  -> ansible as command line tool
+    - ansible tower/AWX -> ansible GUI
+-> Ansible is always installed on a linux machine 
+-> Ansible is python based tool -> ansible requires python version >=2.7
+-> Configuration management code that is written by us in ansible is using YAML
+-> Ansible can make changes on linux based OS and windows OS
+-> Ansible is an agentless tool 
+-> Ansible communicates to host servers using SSH(secured shell)  or winrm(windows remote machine)
+
+
+
+
+
+
+
+Ansible Components:
+================================
+1. Inventory: WHERE TO DO THE CHANGES 
+================================
+It is a simple file which comes by default when ansible is installed on the VM 
+The name of the file is hosts - default location /etc/ansible/hosts 
+In this file we will write the hostname or IP address of the servers where ansible has to do the changes
+You can create your own inventory file also in ansible 
+
+2. Modules: What changes to do
+===================================
+They are nothing but small python scripts (ansible pre-written code)
+We will use these modules to do configuration change on servers 
+There are 4000+ modules in ansible to do various configuration changes 
+these modules require the user to provide some input parameters
+based on the input given the modules will be executed for Configuration changes on the worker 
+
+for example:
+===============
+copy the file /etc/config.php from controller to worker node (/opt)
+
+ansible privdes a readymade module called as copy
+ 
+copy(src=/etc/config.php dest=/opt/config.php)
+
+example 2:
+=====================
+download a file forma  URL to the worker node 
+
+use a ansible module : get_url(url=http://file dest=/opt/file_downlaoded)
+
+
+3. Playbooks:
+===================
+Ansible code to make changes on servers is written in a playbook 
+This playbook is written in YAML 
+A playbook consist of 2 things:
+  - host details
+      - server name/ip address - we get from inventory files
+  - tasks to be executed
+      - modules and your inputs that has to be executed 
+playbook is written and executed on the Ansible controller machine 
+
+playbook in YAML --> execute the playbook --->playbook converted into python code(.py file)
+ansible connects to desired workers --> ansible copies the python code on the worker using SSH
+ansible executes the python code on the workers
+All of this execution you can see on Controller machine , we don't have to connect to worker node.
+
+4. ansible.cfg 
+=================
+This file comes with ansible installation
+This file is present in /etc/ansible 
+the name of the file is always ansible.cfg 
+all the configuration related to ansible will be present in this file 
+
+
+Install ansible on ubuntu machine:
+=====================================
+
+
+$ sudo apt update
+$ sudo apt install software-properties-common
+$ sudo add-apt-repository --yes --update ppa:ansible/ansible
+$ sudo apt install ansible
+
+====================================
+Generate SSH key on Master machine
+
+Step 1: 
+Change user from root to ansiuser
+#   sudo su -
+Step 2:
+Generate ssh key on Master node for root user
+Execute below command:
+# ssh-keygen
+
+press enter
+press enter
+press enter
+
+ssh key will be generated
+
+copy the ssh public key of ansiuser
+
+#  cat /root/.ssh/id_rsa.pub
+
+
+
+
+Right click and copy the copy
+
+
+
+
+Steps to be executed on Worker Node:
+=======================================
+
+# sudo su -
+
+On the  Worker node (AWS VM)
+
+# echo "<give your public key>" >> ~/.ssh/authorized_keys
+
+
+
+
+
+Great job, the setup is complete
+
+Validate you are able to SSH into the Worker node
+======================================
+On the Master node execute below command
+
+
+# ssh root@<public IP of WORKER Ec2 server>
+
+You will be connected on the Worker machine.
+
+Pls give Exit command to come out of worker node
+
+# exit
+
+
+
+AnsibleCode is written in 2 ways:
+================================
+> Ad Hoc commands
+Ad  hoc commands are single line commands
+Using ad hoc command we execute a single module on the worker nodes
+Whenever we have to quickly check something on the worker node we execute an ad hoc command
+Whenever have to validate an output on worker nodes, we will use adhoc commands.
+
+
+
+Syntax:
+
+# ansible <hostgroupname> -m <moduleName> -a “par1=value par2=value”
+
+Demo:
+
+# ansible webserver -m command -a "uptime"
+
+# ansible webserver -m command -a "df -h"
+
+OR
+
+
+# ansible localhost -m command -a "uptime"
+
+# ansible localhost -m command -a "df -h"
+
+
+Create a directory:
+
+# ansible webserver -m file -a "path=/tmp/mydir state=directory"
+
+Validate:
+
+# ansible webserver -m command -a "ls /tmp"
+
+
+
+=====================================
+
+
+
+YAML Introduction:
+=============================================
+Ansible playbooks are written in YAML
+YAML stands for Yet another markup language or YAML a'int a markup language
+The file with YAML code will have extension as .yml or .YAML
+YAML is not a programming language and is also not a scripting langauage
+It is just a file format to save data
+It is case sensitive and space sensitive
+It is easy to learn and understand. No special coding skills are required.
+YAML stores data in the format of key and value pair 
+YAML is declarative in nature 
+Syntax:
+
+key: value
+The key is given by ansible tool
+Value is given by the user.
+The value can be a string, number, boolean, decimal
+
+A key: value is called as a map 
+
+A key can store single value or a list of values 
+
+Use '#' to write a comment in YAML 
+
+Use '---' to indicate beginning of YAML file  -> Its not mandatory to give ---
+
+Example : YAML code when a key stores single value:
+================================================
+
+---
+company: Simplilearn
+Trainer: Sonal Mittal
+Trianing: Ansible 
+Time: 7pm
+days: Weekend
+
+Validate if the YAML written is correct or not.
+
+https://www.yamllint.com/
+
+
+
+Example 2: YAML code when a key stores list of values:
+================================================
+
+---
+company: Simplilearn
+Trainers:
+  - Sonal
+  - Ravi
+  - Abhi
+  - Jack
+  - John
+Trainings: 
+  - Ansible 
+  - DevOps 
+  - AZure
+  - AWS
+Time: ['7PM','9AM','8PM']
+days: 
+  - Weekend
+  - Weekdays
+
+
+  Example 3: YAML code when a key stores again a key and value(storing a MAP):
+  ================================================
+  
+  ---
+  company: Simplilearn
+  Trainers:
+    - name: Sonal
+      email: admin@gmail.com
+    - name: ravi 
+      email: admin@gmail.com
+  Trainings:
+    type:
+     - name: Devops 
+       tools: 
+         - ansible 
+         - jenkins
+         - git
+
+
+==================================================
+
+Ansible Playbooks:
+===================================
+
+# vim playbookDebug.yml
+
+- name: Print a message on Console
+  hosts: webserver
+  tasks:
+  - name: Print a welcome message
+    debug: msg="Hello from Ansible Controller"
+
+# ansible-playbook playbookDebug.yml --syntax-check
+
+# ansible-playbook playbookDebug.yml 
+
+Register Variables:
+==================================
+
+Variables : are temporary locations where data is stored.
+
+Whenever a module is executed and you want to store its output we will use ansible Register variable
+
+Register variable will store output of the module that was written just above the register keyword
+
+Ansible register is a way to capture the output from task execution and store it in a variable. 
+
+
+# vim playbookRegister.yml
+
+- name: Register Variables in ansible
+  hosts: webserver
+  tasks:
+  - name: Print a message
+    debug: msg="Run a command"
+  - name: Execute command on the host server
+    command: hostname -s
+    register: command_output
+  - name: print the register variable value
+    debug: var=command_output.stdout
+  
+Save the file and execute
+
+
+# ansible-playbook playbookRegister.yml
+
+
+========================================
+# vim playbookPackage.yml
+
+- name: Install packages on hostserver
+  hosts: webserver
+  become: true   
+  become_user: root
+  tasks:
+  - name: Install a package
+    package: name=php state=present
+    register: pkg_details
+  - name: Print the package output
+    debug: var=pkg_details
+
+# ansible-playbook playbookPackage.yml
+
+==============================================
+Variables:
+==================================
+A temporary memory location to store data
+In a playbook we will be giving lot of data values to the module parameters, these values may be repeated again and again the playbook
+You can avoid hard coded of same data in the playbook, with help of variables
+
+Variables in a playbook are written in a block called as “vars:”
+
+A variable will have a name and will store a single value or list of values.
+
+In the playbook, we can refer to the variable value using the syntax {{variable_name}} 
+
+Variables can be written in the playbook or in a separate file.
+
+Variable name can be anything but it should not be any keyword related ansible or python 
+Variable name cannot start with a number, the only special character that can be used in a variableNAME  is _
+
+Variable that a user creates and assigns a value - CUSTOM variable
+
+
+Demo 1: Variables written inside the playbook and variables storing single value
+
+
+# vim playbookVariables.yml
+
+- name: Custom Variables
+  hosts: webserver
+  become: true
+  vars:
+   pkg_name: git
+   pkg_state: present
+   file_path: /tmp/demo2
+   file_state: touch
+  tasks:
+  - name: Install a {{pkg_name}} package on hostserver
+    package: name={{pkg_name}} state={{pkg_state}}
+  - name: Create a file on the hostserver
+    file: path={{ file_path }} state={{ file_state }}
+
+
+# ansible-playbook  playbookVariables.yml
+
+Demo2: Variables with extra-vars flag:
+================================
+In the vars section when we create a variable and give it a value, the variable value is called as default value
+But
+This variable value can be replaced by a new value at the runtime  i.e. actual value of the variable can be given using --extra-vars flag
+Suppose we have just created the variable in the playbook and did not give any value then you can pass value to the variable at runtime using --extra-vars flag.
+
+# ansible-playbook playbookVariables.yml --extra-vars pkg_name=php
+
+# ansible-playbook playbookVariables.yml --extra-vars "pkg_name=php file_path=/tmp/file20"
+
+
+
+Demo 3: Store variables in a file and call it in the playbook
+
+# vim variables.yml
+
+   pkg_name: php
+   pkg_state: absent
+   file_path: /tmp/file_new
+   file_state: touch
+
+Save the file
+# vim variablesplaybook2.yml
+
+- name: Custom Variables
+  hosts: webserver
+  become: true
+  vars_files:
+   - variables.yml
+  tasks:
+  - name: Install a {{pkg_name}} package on hostserver
+    package: name={{pkg_name}} state={{pkg_state}}
+  - name: Create a file on the hostserver
+    file: path={{ file_path }} state={{ file_state }}
+
+
+Save the file
+
+# ansible-playbook variablesplaybook2.yml
+
+
+Demo 3: Variables with a list of values
+
+# vim variables2.yml
+
+   pkg_name: 
+   - php
+   - git
+   - tree
+   - maven
+   - curl
+   pkg_state: 
+   - absent
+   - present
+   - latest
+   file_path: 
+   - /tmp/file_new
+   - /tmp/dir1
+   - /tmp/dir2
+   - /tmp/file1
+   file_state: 
+   - touch
+   - directory
+
+
+
+# vim playbookVariables3.yml
+
+- name: Custom Variables
+  hosts: webserver
+  become: true
+  vars_files:
+   - variables2.yml
+  tasks:
+  - name: Install a {{pkg_name[1]}} package on hostserver
+    package: name={{pkg_name[1]}} state={{pkg_state[1]}}
+  - name: Create a file on the hostserver
+    file: path={{ file_path[3] }} state={{ file_state[0] }}
+
+# ansible-playbook playbookVariables3.yml -vv
+
+
+Demo : Deploy HTML code on apache2 server
+
+
+# vim  index.html
+
+<h1> This file is from Ansible Controller </h1>
+<h1> Created by Sonal MIttal </h1>
+
+Save the file.
+
+Create a file that will store the variables to be used in the playbook
+
+# vim vars.yml
+
+pkg_name: apache2
+dest_path: /var/www/html
+
+
+Create the playbook to do the deployment:
+
+# vim playbookapache2.yml
+
+- name: Deploy HTML code on apache2 server
+  hosts: webserver
+  become: true
+  vars_files:
+   - vars.yml
+  tasks:
+  - name: Installtion of a package {{ pkg_name }}
+    package: name={{ pkg_name }} state=present
+  - name: start {{ pkg_name }} service
+    service: name={{ pkg_name }} state=started
+  - name: Copy HTML code on {{ pkg_name }} server
+    copy: src=index.html dest={{ dest_path }}
+  - name: Restarting {{ pkg_name }} service
+    service: name={{ pkg_name }} state=restarted
+
+
+
+Save the file
+
+# ansible-playbook playbookapache2.yml
+
+Execute the playbook.
+
+To validate the deployment on EC2 worker node
+
+Go to aws ec2 instance → copy its public IP
+
+Go to the browser → give http://publicip:80
+
+To validate deployment on labs server
+
+Go to browser of the lab → localhost:80
+
+
+
+==========================================
+
+Loops in ansible
+
+# vim playbookLoops.yml
+
+- name: Loops in a playbook
+  hosts: webserver
+  become: true
+  tasks:
+  - name: Install multiple packages
+    package: name={{ item }} state=present
+    loop:
+     - git
+     - php
+     - apache2
+  - name: Create many directories
+    file: path=/tmp/{{ item }} state=directory
+    loop:
+     - dir1
+     - dir2
+
+
+# ansible-playbook playbookLoops.yml
+
+============================================
+Demo: a playbook with variables and loops
+—----------------------------------------
+
+Create a file with variable written in it
+The variable should have a list of values
+
+# vim variables.yml
+
+user_name:
+ - user01
+ - user02
+ - user03
+ - user04
+
+Save the file (:wq!)
+
+# vim playbookloops.yml
+
+
+- name: Loops and Variables 
+  hosts: webserver
+  become: true
+  vars_files:
+   - variables.yml
+  tasks:
+  - name: Create multiple users
+    user: name={{item}} state=present
+    loop: "{{ user_name }}"
+    ignore_errors: true
+
+
+Save the file and execute the playbook
+
+# ansible-playbook playbookloops.yml
+
+Validate the users on worker nodes:
+
+# ansible webserver -m command -a "cat /etc/passwd"
+
+
+Here in the playbook we have also used ignore_errors keyword
+Which means even if the task fails the playbook will continue to run and will not stop.
+
+================================================
+FACT VARIABLES:
+==================================================
+
+Whenever ansible Controller has to connect to worker node,while executing a playbook, ansible will definitely  gather complete information about its worker nodes.
+It will gather information like Ipaddress, hostname, bios , network, memory, OS, architecture etc etc
+
+This gathered information is called as FACTS
+
+Ansible stores each fact in a variables -> thereby called as Fact variable
+
+These variables are created by Ansible and values are also assigned by ansible
+
+These variable names will always start with ansible_
+
+Ansible executes a module called as setup module to compute the facts about each worker node
+
+=================================
+
+Run the below commands to see the fact variables of each host
+
+# ansible webserver -m setup
+
+This module will return lot of data
+You can count the fact variables using the command
+
+# ansible webserver -m setup | wc -l
+
+If you want to filter some facts only
+
+# ansible webserver -m setup -a "filter=ansible_os*"
+
+# ansible webserver -m setup -a "filter=ansible_hostname*"
+
+
+
+Use of Fact Variables:
+=============================================
+FAct variables can be used to do a condition based execution of the playbook
+
+We can conditions in a playbook using the keyword “WHEN”
+
+# vim playbookWhen.yml
+
+- name: When conditions using FACT variables
+  hosts: webserver
+  become: true
+  tasks:
+  - name: Install a package apache2
+    package: name=apache2 state=present
+    when: ansible_os_family == "Debian"
+  - name: Install httpd package on Amazon linux servers
+    package: name=httpd state=present
+    when: ansible_os_family == "RedHat"
+
+
+Save the file (:wq!)
+
+# ansible-playbook playbookWhen.yml
+
+==================================
+Multiple conditions using logical operators like AND, OR
+
+
+
+# vim playbookWhen2.yml
+
+- name: When conditions using FACT variables
+  hosts: webserver
+  become: true
+  tasks:
+  - name: Install a package apache2
+    package: name=apache2 state=present
+    when: ansible_os_family == "Debian"
+  - name: Install httpd package on Amazon linux servers
+    package: name=httpd state=present
+    when: ansible_os_family == "RedHat"
+  - name: Execute a command
+    command: hostname -s
+    when: (ansible_distribution == "Ubuntu" and ansible_distribution_major_version == "24") or
+               (ansible_distribution == "Amazon" and ansible_distribution_major_version == "2") or
+               (ansible_distribution == "RHEL") 
+
+# ansible-playbook playbookWhen2.yml
