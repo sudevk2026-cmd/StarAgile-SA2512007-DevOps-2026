@@ -762,3 +762,84 @@ Multiple conditions using logical operators like AND, OR
                (ansible_distribution == "RHEL") 
 
 # ansible-playbook playbookWhen2.yml
+
+==========================================
+NGINX Playbook:
+=======================================
+Pls convert this into a Role by watching the recording.
+
+- name: Handlers in Ansible
+  hosts: webserver
+  vars:
+    pkg_name: nginx
+    dest_path: /var/www/html
+  tasks:  # parent tasks
+  - name: Install nginx on webserver
+    apt: name={{ pkg_name }} state=present update_cache=true
+  - name: Start the service
+    service: name={{ pkg_name }} state=started
+  - name: Deploy the HTML code
+    copy: src=index.html dest={{ dest_path }}
+    notify: Restart the nginx server
+  handlers: # these tasks will not exeucte by themselves
+  - name: Restart the nginx server
+    service: name={{ pkg_name }} state=restarted
+=========================================
+Docker Playbook
+
+- hosts: webserver
+  become: true
+  become_user: root
+  tasks:
+  - name: install docker
+    yum: name=docker state=present
+  - name: start docker
+    service: name=docker state=started
+  - name: install git
+    yum: name=git state=present
+  - name: get the dockerfile from githib
+    git: repo=https://github.com/Sonal0409/dockerdemo.git dest=/tmp/gitrepo
+  - name: build dockerfile
+    command: chdir=/tmp/gitrepo docker build -t deployimage:ansible .
+  - name: run the dockerfile
+    command: docker run -itd -P deployimage:ansible
+
+========================================================
+Playbook to setup build server
+====================================================
+
+- name: Setup Build Server
+  hosts: webserver
+  tasks:
+  - name: Install java 21 on the server
+    apt: name=openjdk-21-jdk state=present update_cache=true
+  - name: Print java version
+    command: java --version
+  - name: Install Maven build server
+    apt: name=maven state=present
+  - name: Show maven and Java version
+    command: mvn --version
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
